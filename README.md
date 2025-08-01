@@ -14,7 +14,8 @@
 - Extreme income outlier: $666,666
 
 ### Cleaning Actions Taken
-**File Fix:** Used `sep='\t'` to properly parse TSV format
+
+**File Format Fix:** Converted from tab-separated (TSV) to comma-separated (CSV) format - original used `\t` delimiters, output uses standard `,` delimiters for PostgreSQL compatibility
 
 **Removed Invalid Ages:** Deleted 3 customers >100 years old (clear data entry errors)
 
@@ -47,6 +48,8 @@ CREATE TABLE customers (
 
 **Files Created:**
 - `cleaned_customer_data_final.csv`
+
+
 
 ---
 **Next:** PostgreSQL database setup and data import
