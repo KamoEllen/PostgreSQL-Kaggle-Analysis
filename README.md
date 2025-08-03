@@ -1,55 +1,45 @@
-# Customer Personality Analysis Project
-**Dataset:** Kaggle Customer Personality Analysis  
-**Stack:** PostgreSQL   
-**Engineer:** Data cleaning in Kaggle Notebook
+# ERP Analytics Pipeline
 
----
+# Data Cleaning Process
 
-## 1. Data Cleaning - Why and How
+## Dataset Selection
+Amazon Delivery Dataset: 43,632 logistics records with order details, agent performance, and delivery timestamps. Chosen because it contains operational data similar to what ERP systems handle - agent performance tracking, delivery scheduling, and SLA monitoring.
 
-### Raw Data Issues
-- File parsing error (tab-separated format)
-- 24 missing Income values (1.1%)
-- 3 customers aged 104-131 years (unrealistic)
-- Extreme income outlier: $666,666
+## Data Issues Identified
+Initial assessment revealed several data quality problems:
+- Missing values in key columns (Order_ID, timestamps, agent ratings)
+- Alphanumeric Order_IDs not suitable for database primary keys
+- Mixed data types requiring standardization
+- Need for derived business metrics (on-time delivery tracking)
 
-### Cleaning Actions Taken
+## Cleaning Approach
 
-**File Format Fix:** Converted from tab-separated (TSV) to comma-separated (CSV) format - original used `\t` delimiters, output uses standard `,` delimiters for PostgreSQL compatibility
-
-**Removed Invalid Ages:** Deleted 3 customers >100 years old (clear data entry errors)
-
-**Fixed Missing Income:** Imputed 24 missing values with median ($51,382)
-
-**Controlled Outliers:** Capped extreme income at 99th percentile ($154,216)
-
-**Transformed Complain Field:** Changed from numeric (0,1) to boolean-like strings: 0 → 'f', 1 → 't' for PostgreSQL compatibility
-
-**Feature Selection:** Kept only 4 columns needed for analysis:
-- ID (customer identifier)
-- Year_Birth (demographics) 
-- Income (segmentation)
-- Complain (behavior flag)
-
-### Results
-- **Clean Dataset:** 2,237 customers × 4 features
-- **Data Quality:** 100% complete, realistic ranges
-- **PostgreSQL Ready:** Proper data types and structure
-
+### Schema Design
+Extracted four columns for ERP-style operational tracking:
 ```sql
--- Ready for PostgreSQL import
-CREATE TABLE customers (
-    id INTEGER PRIMARY KEY,
-    year_birth INTEGER,
-    income DECIMAL(10,2), 
-    complain VARCHAR(1) CHECK (complain IN ('f', 't'))
+CREATE TABLE amazon_deliveries (
+    id BIGINT,           -- Converted from alphanumeric Order_ID
+    order_date TEXT,     -- Original order date
+    agent_rating TEXT,   -- Agent performance score
+    ontime_flag TEXT     -- Derived delivery performance metric
 );
 ```
 
-**Files Created:**
-- `cleaned_customer_data_final.csv`
+### Key Transformations
+**ID Generation**: Converted alphanumeric Order_IDs to numeric using hash function for database compatibility
 
+**Data Cleaning**: Removed records with missing values in critical fields
 
+**Business Logic**: Created `ontime_flag` by comparing Order_Time and Pickup_Time:
+- "true" if pickup within 20 minutes of order
+- "false" otherwise
+- Handles parsing errors and edge cases
 
----
-**Next:** PostgreSQL database setup and data import
+**Format Standardization**: Converted all non-ID fields to TEXT for PostgreSQL compatibility
+
+## Output
+- Cleaned CSV dataset with validated schema
+- SQL export with CREATE TABLE and batched INSERT statements (1,000 records per batch)
+- Comprehensive cleaning report with detailed quality metrics
+
+The cleaned dataset is prepared for PostgreSQL import as part of a larger ERP demonstration pipeline.
